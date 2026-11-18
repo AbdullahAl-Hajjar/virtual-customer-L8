@@ -40,6 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // keep track of how long we've been running
     let start_time = Instant::now();
 
+    let client = reqwest::blocking::Client::new();
     loop {
         order_counter += 1;
 
@@ -71,13 +72,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let order = Order { customer_id, items };
         let serialized_order = serde_json::to_string(&order)?;
-        let client = reqwest::blocking::Client::new();
 
         let response = client
             .post(order_service_url.clone())
             .header("Content-Type", "application/json")
             .body(serialized_order.clone())
-            .send();
+            .send()
+            .and_then(|response| response.error_for_status());
 
         match response {
             Ok(res) => {
